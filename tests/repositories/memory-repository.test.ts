@@ -21,6 +21,7 @@ test("MemoryDatabaseRepository lists seeded fallback memories", async () => {
   assert.ok(result.items.length > 0);
   assert.equal(typeof result.items[0].content, "string");
   assert.equal(typeof result.items[0].source_app, "string");
+  assert.ok(Array.isArray(result.items[0].tags));
 });
 
 test("MemoryDatabaseRepository gets a fallback memory by id", async () => {
@@ -33,4 +34,5 @@ test("MemoryDatabaseRepository gets a fallback memory by id", async () => {
   assert.ok(result.item);
   assert.equal(result.item.id, first.id);
   assert.equal(result.item.content, first.content);
+  assert.deepEqual(result.item.tags, first.tags);
 });

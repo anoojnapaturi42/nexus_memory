@@ -16,6 +16,7 @@ create table if not exists public.memories (
   content text not null,
   source_app text not null,
   importance_score numeric(4, 3) not null default 0.500,
+  tags text[] not null default '{}'::text[],
   embedding vector(1536),
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),

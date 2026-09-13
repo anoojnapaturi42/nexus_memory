@@ -27,6 +27,7 @@ export type DatabaseMemoryRecord = {
   content: string;
   source_app: string;
   importance_score: number;
+  tags: string[];
   embedding: number[] | null;
   metadata: Record<string, DatabaseJson>;
   created_at: string;

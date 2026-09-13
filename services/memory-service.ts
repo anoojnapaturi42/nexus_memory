@@ -7,8 +7,12 @@ function toMemory(record: {
   content: string;
   source_app: string;
   importance_score: number;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
   created_at: string;
 }): Memory {
+  const metadataTags = Array.isArray(record.metadata?.tags) ? record.metadata.tags.map(String) : [];
+
   return {
     id: record.id,
     content: record.content,
@@ -17,7 +21,7 @@ function toMemory(record: {
     importanceScore: record.importance_score,
     embeddingId: `${record.id}-embedding`,
     relatedEntityIds: [],
-    tags: [record.source_app],
+    tags: record.tags?.length ? record.tags : metadataTags.length ? metadataTags : [record.source_app],
   };
 }
 

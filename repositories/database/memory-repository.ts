@@ -17,13 +17,17 @@ export class MemoryDatabaseRepository extends BaseDatabaseRepository<DatabaseMem
   }
 
   protected fromRow(row: Record<string, unknown>): DatabaseMemoryRecord {
+    const metadata = (row.metadata as Record<string, DatabaseJson>) ?? {};
+    const metadataTags = Array.isArray(metadata.tags) ? metadata.tags.map(String) : [];
+
     return {
       id: String(row.id ?? randomUUID()),
       content: String(row.content ?? ""),
       source_app: String(row.source_app ?? "unknown"),
       importance_score: Number(row.importance_score ?? 0),
+      tags: Array.isArray(row.tags) ? row.tags.map(String) : metadataTags,
       embedding: Array.isArray(row.embedding) ? (row.embedding as number[]) : null,
-      metadata: (row.metadata as Record<string, DatabaseJson>) ?? {},
+      metadata,
       created_at: String(row.created_at ?? new Date().toISOString()),
       updated_at: String(row.updated_at ?? new Date().toISOString()),
     };
@@ -51,6 +55,7 @@ export class MemoryDatabaseRepository extends BaseDatabaseRepository<DatabaseMem
       content: input.content,
       source_app: input.source_app,
       importance_score: input.importance_score,
+      tags: input.tags ?? [],
       embedding: input.embedding ?? null,
       metadata: (input.metadata ?? {}) as Record<string, DatabaseJson>,
       created_at: input.created_at ?? now,
