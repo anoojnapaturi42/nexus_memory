@@ -137,6 +137,16 @@ export type MemoryEvaluationSummary = {
   generatedAt: string;
 };
 
+export type MemoryEvaluationRunArtifact = {
+  runId: string;
+  benchmarkCaseCount: number;
+  systemIds: MemorySystemId[];
+  observations: MemoryEvaluationObservation[];
+  summaries: MemoryEvaluationSummary[];
+  errors: MemoryEvaluationError[];
+  generatedAt: string;
+};
+
 export const ablationIds = [
   "without-consolidation",
   "without-temporal-validity",

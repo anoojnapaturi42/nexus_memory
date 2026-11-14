@@ -49,7 +49,20 @@ export {
   SemanticRagMemorySystemAdapter,
   StatelessMemorySystemAdapter,
 } from "./evaluation";
-export type { MemorySystemAdapter } from "./evaluation";
+export {
+  calculateMemoryEvaluationMetrics,
+  exportMemoryEvaluationArtifact,
+  GeminiMemoryAnswerGenerator,
+  MemoryEvaluationRunner,
+  RuleBasedMemoryAnswerEvaluator,
+} from "./evaluation";
+export type {
+  MemoryAnswerEvaluator,
+  MemoryAnswerGenerator,
+  MemoryAnswerGenerationRequest,
+  MemoryAnswerGenerationResult,
+  MemorySystemAdapter,
+} from "./evaluation";
 export { memoryService, MemoryService } from "./memory-service";
 export {
   proactiveAutomationService,
