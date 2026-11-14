@@ -67,6 +67,21 @@ export type MemorySystemConfiguration = {
   usesImportanceWeighting: boolean;
 };
 
+export type MemoryRetrievalReason = {
+  memoryId: string;
+  score: number;
+  signals: string[];
+};
+
+export type MemorySystemExecution = {
+  systemId: MemorySystemId;
+  prompt: string;
+  context: string;
+  retrievedMemoryIds: string[];
+  retrievalReasons: MemoryRetrievalReason[];
+  retrievalLatencyMs: number;
+};
+
 export type MemoryEvaluationUsage = {
   inputTokens: number;
   outputTokens: number;
