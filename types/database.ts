@@ -102,7 +102,8 @@ export interface DatabaseSchema {
     Tables: {
       memories: {
         Row: DatabaseMemoryRecord;
-        Insert: Omit<DatabaseMemoryRecord, "created_at" | "updated_at"> & {
+        Insert: Omit<DatabaseMemoryRecord, "id" | "created_at" | "updated_at"> & {
+          id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -111,7 +112,8 @@ export interface DatabaseSchema {
       };
       conversations: {
         Row: DatabaseConversationRecord;
-        Insert: Omit<DatabaseConversationRecord, "created_at" | "updated_at"> & {
+        Insert: Omit<DatabaseConversationRecord, "id" | "created_at" | "updated_at"> & {
+          id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -120,7 +122,8 @@ export interface DatabaseSchema {
       };
       entities: {
         Row: DatabaseEntityRecord;
-        Insert: Omit<DatabaseEntityRecord, "created_at" | "updated_at"> & {
+        Insert: Omit<DatabaseEntityRecord, "id" | "created_at" | "updated_at"> & {
+          id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -129,7 +132,8 @@ export interface DatabaseSchema {
       };
       relationships: {
         Row: DatabaseRelationshipRecord;
-        Insert: Omit<DatabaseRelationshipRecord, "created_at" | "updated_at"> & {
+        Insert: Omit<DatabaseRelationshipRecord, "id" | "created_at" | "updated_at"> & {
+          id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -138,7 +142,8 @@ export interface DatabaseSchema {
       };
       agent_logs: {
         Row: DatabaseAgentLogRecord;
-        Insert: Omit<DatabaseAgentLogRecord, "created_at" | "updated_at"> & {
+        Insert: Omit<DatabaseAgentLogRecord, "id" | "created_at" | "updated_at"> & {
+          id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -147,7 +152,8 @@ export interface DatabaseSchema {
       };
       user_integrations: {
         Row: DatabaseIntegrationRecord;
-        Insert: Omit<DatabaseIntegrationRecord, "created_at" | "updated_at"> & {
+        Insert: Omit<DatabaseIntegrationRecord, "id" | "created_at" | "updated_at"> & {
+          id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -155,6 +161,10 @@ export interface DatabaseSchema {
         Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
 

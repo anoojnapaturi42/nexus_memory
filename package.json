@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "description": "Google Nexus Memory - a scalable AI workspace platform scaffold",
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

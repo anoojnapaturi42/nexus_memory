@@ -82,6 +82,15 @@ In plain language, it is meant to feel like an internal operating system for you
 - semantic memory retrieval pipeline
 - agent orchestration framework
 
+### Memory Research Benchmark
+
+- 30-case synthetic benchmark with gold memory labels across seven categories
+- four memory-system adapters behind a shared interface
+- retrieval, answer, temporal, conflict, latency, and token metrics
+- JSON/CSV run exports in `evaluation-results/`
+- `/research` dashboard with leaderboard, temporal-update demo, and failure-case explorer
+- methodology and limitations notes in `docs/research-benchmark.md`
+
 ## Architecture
 
 The repository follows a layered architecture so UI, logic, persistence, and external integrations stay separated.
@@ -261,6 +270,18 @@ The project uses environment validation in several areas. Common variables inclu
 - `DATABASE_URL`
 
 If a variable is missing, the relevant service usually falls back to a safe error state or a mock mode during development.
+
+## Deployment
+
+Deploy the application to Vercel as a Next.js project.
+
+1. Create a new Vercel project and import this repository or deploy this folder with the Vercel CLI.
+2. Add only the server-side variables required for the features you enable.
+3. Set `GEMINI_API_KEY` in Vercel only when server-side Gemini features are ready to run.
+4. Never create a variable named `NEXT_PUBLIC_GEMINI_API_KEY`; `NEXT_PUBLIC_` variables are sent to browsers.
+5. Set a strong `RESEARCH_EVALUATION_SECRET` if you want to run the protected research evaluation endpoint in production.
+
+The public application does not expose the Gemini key. The research evaluation endpoint rejects public production requests unless they include the configured authorization secret.
 
 ## What is Real vs Mock
 

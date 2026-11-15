@@ -31,6 +31,38 @@ export type BenchmarkMemory = {
   entityIds?: string[];
 };
 
+export type MemoryAnswerCriterion = {
+  id: string;
+  label: string;
+  /** Each group is an OR of aliases; every group must match for the criterion to pass. */
+  groups: string[][];
+  /** When true, the criterion passes only when no alias appears in a disallowed context. */
+  prohibited?: boolean;
+  /** Default true. Optional criteria affect the score but not correctness. */
+  required?: boolean;
+  weight?: number;
+  /** Require the match to start the answer, for yes/no questions. */
+  atStart?: boolean;
+  /**
+   * For prohibited criteria: aliases found within this many tokens of one of these
+   * cues are allowed. Use it to distinguish "not frontend" from "frontend", or
+   * "moved from August 18" from "the interview is August 18".
+   */
+  allowedContext?: string[];
+  /** Default 8. Token window on each side of a prohibited match. */
+  contextWindow?: number;
+};
+
+export type MemoryAnswerCriterionResult = {
+  id: string;
+  label: string;
+  required: boolean;
+  prohibited: boolean;
+  weight: number;
+  passed: boolean;
+  matched: string[];
+};
+
 export type BenchmarkConversationTurn = {
   id: string;
   conversationId: string;
@@ -50,6 +82,8 @@ export type MemoryBenchmarkCase = {
   goldMemoryIds: string[];
   expectedAnswer: string;
   answerRubric: string[];
+  /** Structured, negation-aware criteria used by the v2 evaluator. */
+  answerCriteria?: MemoryAnswerCriterion[];
   taskSuccessCriteria?: string[];
   notes?: string;
 };
@@ -99,8 +133,10 @@ export type MemoryEvaluationObservation = {
   latencyMs: number;
   usage: MemoryEvaluationUsage;
   evaluatedAt: string;
-  evaluator: "rule-based" | "llm-judge" | "human";
+  evaluator: "rule-based" | "criteria-v2" | "llm-judge" | "human";
   evaluatorNotes?: string;
+  criteriaScore?: number;
+  criterionResults?: MemoryAnswerCriterionResult[];
 };
 
 export type RetrievalMetrics = {
@@ -145,6 +181,27 @@ export type MemoryEvaluationRunArtifact = {
   summaries: MemoryEvaluationSummary[];
   errors: MemoryEvaluationError[];
   generatedAt: string;
+  provider?: string;
+  model?: string;
+  datasetLabel?: string;
+  /** Evaluator used for this artifact. Older artifacts omit it. */
+  evaluator?: MemoryEvaluationObservation["evaluator"];
+  /** Set when an artifact was re-scored from stored answers without new model calls. */
+  sourceRunId?: string;
+};
+
+export type MemoryEvaluationRunIndexEntry = {
+  runId: string;
+  benchmarkCaseCount: number;
+  completedCaseCount: number;
+  systemIds: MemorySystemId[];
+  generatedAt: string;
+  provider?: string;
+  model?: string;
+  datasetLabel?: string;
+  evaluator?: MemoryEvaluationObservation["evaluator"];
+  sourceRunId?: string;
+  errorCount: number;
 };
 
 export const ablationIds = [
@@ -174,6 +231,7 @@ export type MemoryEvaluationErrorType =
   | "entity-confusion"
   | "retrieval-contamination"
   | "correct-retrieval-wrong-answer"
+  | "execution-failed"
   | "incorrect-evaluation";
 
 export type MemoryEvaluationError = {
