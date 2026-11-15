@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   BellRing,
+  FlaskConical,
   LayoutDashboard,
   Menu,
   PanelsTopLeft,
@@ -43,6 +44,7 @@ const sidebarNav: NavItem[] = [
   { href: "/connected-apps", label: "Connected Apps", icon: Puzzle },
   { href: "/chat-assistant", label: "Chat Assistant", icon: Bot },
   { href: "/automations", label: "Automations", icon: BellRing },
+  { href: "/research", label: "Research", icon: FlaskConical },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { GeminiLLMService } from "@/services/llm/gemini.service";
 import { getGeminiEnv } from "@/services/llm/env";
 import type {
@@ -61,10 +60,18 @@ function buildMockResponse(request: LLMGenerateRequest) {
   return `i processed the request for ${request.agentName ?? "agent"}.`;
 }
 
+function hashString(value: string) {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+}
+
 function deterministicEmbedding(text: string, dimensions = 16) {
   const vector = Array.from({ length: dimensions }, (_, index) => {
-    const hash = createHash("sha256").update(`${index}:${text}`).digest();
-    const slice = hash.readUInt32BE(index % (hash.length - 4));
+    const slice = hashString(`${index}:${text}`);
     return Number((slice % 10_000) / 10_000);
   });
   return vector;

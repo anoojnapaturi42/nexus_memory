@@ -84,8 +84,8 @@ function buildNodeMap(nodes: GraphRenderNode[]) {
 }
 
 function resolveEdgePoints(
-  source: GraphNode,
-  target: GraphNode,
+  source: GraphRenderNode,
+  target: GraphRenderNode,
   transform: CanvasTransform,
   highlight: boolean,
 ) {
@@ -148,11 +148,14 @@ export function MemoryGraphCanvas({
   }, []);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) return;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const ctxElement = canvasElement.getContext("2d");
+    if (!ctxElement) return;
+
+    const canvas: HTMLCanvasElement = canvasElement;
+    const ctx: CanvasRenderingContext2D = ctxElement;
 
     let frame = 0;
 
@@ -399,8 +402,10 @@ export function MemoryGraphCanvas({
   }, [highlightedNodeId, hoveredNodeId, onHoverNode, onTransformChange, ready, relationshipFilter, selectedNodeId]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) return;
+
+    const canvas: HTMLCanvasElement = canvasElement;
 
     function handlePointerDown(event: PointerEvent) {
       const rect = canvas.getBoundingClientRect();

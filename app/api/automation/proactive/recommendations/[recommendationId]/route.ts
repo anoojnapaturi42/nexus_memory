@@ -20,9 +20,9 @@ function buildError(message: string, code: string, details?: Record<string, unkn
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { recommendationId: string } },
+  { params }: { params: Promise<{ recommendationId: string }> },
 ) {
-  const { recommendationId } = params;
+  const { recommendationId } = await params;
   const body = (await request.json().catch(() => null)) as DecisionBody | null;
   const decision = body?.decision ?? "approve";
 
