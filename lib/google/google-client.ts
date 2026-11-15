@@ -29,7 +29,7 @@ function isDevelopmentFallbackEnabled() {
   return process.env.NODE_ENV !== "production";
 }
 
-function createOAuthClient(config: GoogleWorkspaceClientConfig) {
+function createOAuthClient(config: Pick<GoogleWorkspaceClientConfig, "clientId" | "clientSecret" | "redirectUri">) {
   return new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUri);
 }
 
@@ -76,7 +76,7 @@ async function buildLiveAuthState(request?: NextRequest): Promise<GoogleWorkspac
       const refreshed = await googleAuthService.refreshAccessToken(refreshToken);
       accessToken = refreshed.accessToken;
       refreshToken = refreshed.refreshToken;
-      expiryDate = refreshed.expiryDate ? Date.parse(refreshed.expiryDate) : Date.now() + 60 * 60 * 1000;
+      expiryDate = refreshed.expiryDate ?? Date.now() + 60 * 60 * 1000;
       await googleAuthService.persistAuthorizedAccount({
         userId: session.userId,
         accessToken,
@@ -98,7 +98,7 @@ async function buildLiveAuthState(request?: NextRequest): Promise<GoogleWorkspac
 
   return {
     kind: "live",
-    config: envResult.env,
+    config: { ...envResult.env, hasOAuthSession: true },
     sessionId: session.userId,
     oauthClient,
   };

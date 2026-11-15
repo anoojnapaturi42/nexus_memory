@@ -18,7 +18,7 @@ export const useProactiveStore = create<ProactiveStoreState>()(
     }),
     {
       name: "google-nexus-memory-proactive",
-      storage: createJSONStorage(() => (typeof window !== "undefined" ? localStorage : undefined)),
+      storage: createJSONStorage(() => localStorage),
     },
   ),
 );

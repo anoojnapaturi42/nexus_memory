@@ -195,7 +195,7 @@ export const useIntegrationStore = create<IntegrationState>()(
     }),
     {
       name: "google-nexus-memory-integrations",
-      storage: createJSONStorage(() => (typeof window !== "undefined" ? localStorage : undefined)),
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         integrations: state.integrations,
         activeProvider: state.activeProvider,

@@ -156,7 +156,8 @@ export abstract class BaseDatabaseRepository<
     if (this.supabase) {
       try {
         const payload = this.toInsertPayload(input);
-        const { data, error } = await this.supabase.from(String(this.tableName)).insert(payload).select("*").single();
+        // Table name is dynamic, so the generic client cannot narrow the insert shape here.
+        const { data, error } = await this.supabase.from(String(this.tableName)).insert(payload as never).select("*").single();
         if (!error && data) {
           return {
             source: "supabase",
@@ -194,7 +195,8 @@ export abstract class BaseDatabaseRepository<
     if (this.supabase) {
       try {
         const payload = this.toUpdatePayload(input);
-        const { data, error } = await this.supabase.from(String(this.tableName)).update(payload).eq("id", id).select("*").single();
+        // Table name is dynamic, so the generic client cannot narrow the update shape here.
+        const { data, error } = await this.supabase.from(String(this.tableName)).update(payload as never).eq("id", id).select("*").single();
         if (!error && data) {
           return {
             source: "supabase",
@@ -225,7 +227,7 @@ export abstract class BaseDatabaseRepository<
         const result = await this.pool.query(text, values);
         return {
           source: "postgres",
-          deleted: result.rowCount > 0,
+          deleted: (result.rowCount ?? 0) > 0,
         };
       } catch {
         // fall through to the next available source

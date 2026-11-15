@@ -1,6 +1,7 @@
 import type {
   BenchmarkConversationTurn,
   BenchmarkMemory,
+  MemoryAnswerCriterion,
   MemoryBenchmarkCase,
 } from "@/types/memory-evaluation";
 
@@ -12,6 +13,83 @@ type CaseSeed = Omit<MemoryBenchmarkCase, "conversations" | "candidateMemories">
   conversationLines: string[];
   memories: MemorySeed[];
 };
+
+const negationCues = [
+  "not",
+  "never",
+  "avoid",
+  "avoids",
+  "avoiding",
+  "instead",
+  "rather",
+  "without",
+  "over",
+  "less",
+  "do not",
+  "does not",
+  "did not",
+  "is not",
+  "are not",
+  "was not",
+  "were not",
+  "will not",
+  "cannot",
+  "can not",
+  "no longer",
+  "stop",
+  "stopped",
+];
+
+const historicalCues = [
+  ...negationCues,
+  "was",
+  "were",
+  "previously",
+  "originally",
+  "planned",
+  "moved",
+  "rescheduled",
+  "changed",
+  "from",
+  "earlier",
+  "old",
+  "previous",
+  "former",
+  "used to",
+];
+
+type CriterionOptions = Omit<MemoryAnswerCriterion, "id" | "label" | "groups">;
+
+function criterion(
+  id: string,
+  label: string,
+  groups: string[][],
+  options: CriterionOptions = {},
+): MemoryAnswerCriterion {
+  return { id, label, groups, ...options };
+}
+
+function optionalCriterion(
+  id: string,
+  label: string,
+  groups: string[][],
+  options: CriterionOptions = {},
+): MemoryAnswerCriterion {
+  return criterion(id, label, groups, { ...options, required: false });
+}
+
+function prohibitedCriterion(
+  id: string,
+  label: string,
+  aliases: string[],
+  options: CriterionOptions = {},
+): MemoryAnswerCriterion {
+  return criterion(id, label, [aliases], {
+    prohibited: true,
+    allowedContext: negationCues,
+    ...options,
+  });
+}
 
 const baseDate = "2026-10-01T09:00:00.000Z";
 
@@ -81,6 +159,14 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["raj-degree"],
     expectedAnswer: "You graduate in June 2027 with a B.Tech in Computer Science.",
     answerRubric: ["mentions June 2027", "mentions B.Tech or Computer Science"],
+    answerCriteria: [
+      criterion("graduation-date", "States the graduation month and year", [
+        ["june 2027", "june of 2027"],
+      ]),
+      optionalCriterion("degree", "Mentions the degree or field", [
+        ["b tech", "btech", "computer science"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "stable-fact-02",
@@ -104,6 +190,9 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["raj-location"],
     expectedAnswer: "You are available to work from Bengaluru.",
     answerRubric: ["mentions Bengaluru"],
+    answerCriteria: [
+      criterion("work-city", "States Bengaluru", [["bengaluru", "bangalore"]]),
+    ],
   }),
   benchmarkCase({
     id: "stable-fact-03",
@@ -131,6 +220,12 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     expectedAnswer:
       "You are applying for the Microsoft Research India internship from January through June 2027.",
     answerRubric: ["mentions Microsoft Research India", "mentions 2027"],
+    answerCriteria: [
+      criterion("internship-name", "Names the Microsoft Research India internship", [
+        ["microsoft research india", "microsoft research", "msr india"],
+      ]),
+      optionalCriterion("internship-dates", "Mentions the internship year", [["2027"]]),
+    ],
   }),
   benchmarkCase({
     id: "stable-fact-04",
@@ -154,6 +249,11 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["raj-google-interview"],
     expectedAnswer: "Your Google ML interview is on August 18.",
     answerRubric: ["mentions August 18"],
+    answerCriteria: [
+      criterion("interview-date", "States August 18", [
+        ["august 18", "aug 18", "18 august", "18th august"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "stable-fact-05",
@@ -180,6 +280,14 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["raj-hci-course"],
     expectedAnswer: "Your Human-Centered AI course gave you that first research experience.",
     answerRubric: ["mentions Human-Centered AI", "mentions research or user studies"],
+    answerCriteria: [
+      criterion("course-name", "Names the Human-Centered AI course", [
+        ["human-centered ai", "human centered ai", "human-centred ai", "hci"],
+      ]),
+      optionalCriterion("research-experience", "Mentions research or user studies", [
+        ["research", "user studies", "user study"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "preference-01",
@@ -205,6 +313,17 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["raj-role-preference"],
     expectedAnswer: "Prioritize backend engineering and applied AI roles.",
     answerRubric: ["mentions backend", "mentions applied AI", "does not prioritize frontend"],
+    answerCriteria: [
+      criterion("backend", "Prioritizes backend work", [["backend", "back end", "back-end"]]),
+      criterion("applied-ai", "Prioritizes applied AI work", [
+        ["applied ai", "ai engineering", "ai role", "ai roles", "artificial intelligence", "ai"],
+      ]),
+      prohibitedCriterion("not-frontend", "Does not recommend frontend roles", [
+        "frontend",
+        "front end",
+        "front-end",
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "preference-02",
@@ -231,6 +350,15 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["raj-answer-style"],
     expectedAnswer: "Use concise, structured answers with one concrete example.",
     answerRubric: ["mentions concise", "mentions structure", "mentions example"],
+    answerCriteria: [
+      criterion("concise", "Recommends concise answers", [["concise", "brief", "short"]]),
+      criterion("structure", "Recommends a clear structure", [
+        ["structure", "structured", "structuring"],
+      ]),
+      criterion("example", "Recommends a concrete example", [
+        ["example", "concrete example", "specific example"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "preference-03",
@@ -254,6 +382,12 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["raj-deep-work-hours"],
     expectedAnswer: "Schedule focused study from 7:30 to 9:30 in the morning.",
     answerRubric: ["mentions 7:30", "mentions morning"],
+    answerCriteria: [
+      criterion("start-time", "Mentions the 7:30 to 9:30 window", [
+        ["7 30", "7:30", "7.30", "07 30"],
+      ]),
+      criterion("morning", "Mentions the morning", [["morning"]]),
+    ],
   }),
   benchmarkCase({
     id: "preference-04",
@@ -280,6 +414,12 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["maya-feedback-preference"],
     expectedAnswer: "Ask for short weekly feedback sessions.",
     answerRubric: ["mentions weekly", "prefers short sessions"],
+    answerCriteria: [
+      criterion("weekly", "Recommends weekly feedback", [
+        ["weekly", "every week", "each week"],
+      ]),
+      criterion("short", "Prefers short sessions", [["short", "brief", "concise"]]),
+    ],
   }),
   benchmarkCase({
     id: "preference-05",
@@ -306,6 +446,14 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["maya-explanation-style"],
     expectedAnswer: "Start with a concrete user scenario, then show the architecture diagram.",
     answerRubric: ["mentions user scenario", "mentions architecture diagram"],
+    answerCriteria: [
+      criterion("user-scenario", "Starts from a concrete user scenario", [
+        ["user scenario", "user story", "concrete scenario", "scenario"],
+      ]),
+      criterion("architecture", "Mentions the architecture diagram", [
+        ["architecture diagram", "architecture"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "temporal-update-01",
@@ -341,6 +489,17 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["raj-backend-ai-current"],
     expectedAnswer: "Focus on backend and AI engineering roles, not frontend roles.",
     answerRubric: ["mentions backend", "mentions AI", "does not recommend frontend"],
+    answerCriteria: [
+      criterion("backend", "Prioritizes backend work", [["backend", "back end", "back-end"]]),
+      criterion("ai", "Prioritizes AI work", [
+        ["applied ai", "ai engineering", "ai role", "ai roles", "artificial intelligence", "ai"],
+      ]),
+      prohibitedCriterion("not-frontend", "Does not recommend frontend roles", [
+        "frontend",
+        "front end",
+        "front-end",
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "temporal-update-02",
@@ -376,6 +535,17 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["google-interview-aug25"],
     expectedAnswer: "Prepare for the Google interview on August 25.",
     answerRubric: ["mentions August 25", "does not mention August 18 as current"],
+    answerCriteria: [
+      criterion("current-date", "States the current interview date, August 25", [
+        ["august 25", "aug 25", "25 august", "25th august"],
+      ]),
+      prohibitedCriterion(
+        "stale-date",
+        "Does not present August 18 as the current date",
+        ["august 18", "aug 18", "18 august", "18th august"],
+        { allowedContext: historicalCues },
+      ),
+    ],
   }),
   benchmarkCase({
     id: "temporal-update-03",
@@ -411,6 +581,15 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["maya-bengaluru-current"],
     expectedAnswer: "Target Bengaluru for your next in-person role.",
     answerRubric: ["mentions Bengaluru", "does not prioritize Hyderabad"],
+    answerCriteria: [
+      criterion("current-city", "Targets Bengaluru", [["bengaluru", "bangalore"]]),
+      prohibitedCriterion(
+        "stale-city",
+        "Does not prioritize the superseded Hyderabad option",
+        ["hyderabad"],
+        { allowedContext: historicalCues },
+      ),
+    ],
   }),
   benchmarkCase({
     id: "temporal-update-04",
@@ -446,6 +625,12 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["sam-timed-drills-current"],
     expectedAnswer: "Use timed system design drills with feedback.",
     answerRubric: ["mentions timed drills", "mentions feedback"],
+    answerCriteria: [
+      criterion("timed-drills", "Recommends timed drills", [
+        ["timed drills", "timed design drills", "timed system design", "timed practice"],
+      ]),
+      criterion("feedback", "Recommends feedback", [["feedback", "review", "critique"]]),
+    ],
   }),
   benchmarkCase({
     id: "conflict-01",
@@ -481,6 +666,17 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["internship-deadline-official"],
     expectedAnswer: "The official deadline is November 15.",
     answerRubric: ["mentions November 15", "does not present November 10 as certain"],
+    answerCriteria: [
+      criterion("official-deadline", "States the official November 15 deadline", [
+        ["november 15", "nov 15", "15 november", "15th november"],
+      ]),
+      prohibitedCriterion(
+        "stale-deadline",
+        "Does not present November 10 as the current deadline",
+        ["november 10", "nov 10", "10 november", "10th november"],
+        { allowedContext: historicalCues },
+      ),
+    ],
   }),
   benchmarkCase({
     id: "conflict-02",
@@ -521,6 +717,29 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
       "mentions Bengaluru",
       "recognizes remote preference is not explicit",
     ],
+    answerCriteria: [
+      criterion("in-person", "States the explicit in-person preference", [
+        ["in person", "in-person", "on site", "onsite", "bengaluru", "bangalore"],
+      ]),
+      prohibitedCriterion("not-remote", "Does not state remote work as the current preference", [
+        "remote",
+        "work from home",
+        "wfh",
+      ]),
+      optionalCriterion("remote-not-explicit", "Explains that remote is not the explicit preference", [
+        ["remote", "work from home", "wfh"],
+        [
+          "not explicit",
+          "not stated",
+          "not your stated",
+          "no stated",
+          "not currently",
+          "not your current",
+          "not indicated",
+          "is not explicit",
+        ],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "conflict-03",
@@ -556,6 +775,26 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["sam-resume-exported"],
     expectedAnswer: "Yes. The final review is complete and Resume.pdf has been exported.",
     answerRubric: ["says ready", "mentions final review or Resume.pdf"],
+    answerCriteria: [
+      criterion("affirmative", "Says the resume is ready or complete", [
+        ["yes", "ready", "complete", "completed", "exported", "finished", "good to go", "done"],
+      ]),
+      criterion("evidence", "Mentions the final review or Resume.pdf", [
+        ["final review", "resume pdf", "exported resume"],
+      ]),
+      prohibitedCriterion(
+        "not-ready",
+        "Does not claim the resume is still unfinished",
+        [
+          "not ready",
+          "almost ready",
+          "not complete",
+          "not finished",
+          "still reviewing",
+          "needs review",
+        ],
+      ),
+    ],
   }),
   benchmarkCase({
     id: "conflict-04",
@@ -593,6 +832,24 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["raj-still-applying"],
     expectedAnswer: "No. You are still applying and have not received an offer yet.",
     answerRubric: ["says no", "mentions still applying or no offer"],
+    answerCriteria: [
+      criterion("still-applying", "Says the user is still applying or has no offer", [
+        [
+          "still applying",
+          "still in the running",
+          "have not received",
+          "no offer",
+          "not received",
+          "have not accepted",
+          "not accepted",
+        ],
+      ]),
+      prohibitedCriterion("not-accepted", "Does not claim the internship was accepted", [
+        "accepted",
+        "already accepted",
+        "have accepted",
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "multi-session-01",
@@ -633,6 +890,17 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
       "mentions Gemini or TypeScript",
       "mentions applied ML or human-centered AI",
     ],
+    answerCriteria: [
+      criterion("memory-assistant", "Mentions the persistent-memory assistant", [
+        ["memory assistant", "persistent-memory assistant", "persistent memory assistant", "nexus memory"],
+      ]),
+      criterion("implementation", "Mentions Gemini or TypeScript", [
+        ["gemini", "typescript", "type script"],
+      ]),
+      criterion("target-field", "Connects the project to applied ML or human-centered AI", [
+        ["applied ml", "applied machine learning", "human-centered ai", "human centered ai", "machine learning"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "multi-session-02",
@@ -670,6 +938,17 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
       "Plan daily 7:30 to 9:30 morning sessions leading up to the August 25 interview.",
     answerRubric: ["mentions August 25", "mentions morning study block"],
     taskSuccessCriteria: ["creates a time-bound plan", "uses both memories"],
+    answerCriteria: [
+      criterion("interview-date", "Includes the August 25 interview date", [
+        ["august 25", "aug 25", "25 august", "25th august"],
+      ]),
+      criterion("study-block", "Uses the morning deep-work block", [
+        ["morning", "7 30", "7:30", "7.30", "deep work", "deep-work"],
+      ]),
+      optionalCriterion("cadence", "Describes a repeated daily plan", [
+        ["daily", "each morning", "every morning", "each day", "per day"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "multi-session-03",
@@ -707,6 +986,18 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     expectedAnswer:
       "Run short weekly reviews focused on your AI tool for research-application planning.",
     answerRubric: ["mentions weekly feedback", "mentions prototype goal"],
+    answerCriteria: [
+      criterion("weekly", "Recommends weekly feedback", [
+        ["weekly", "every week", "each week"],
+      ]),
+      criterion("feedback", "Recommends feedback or review sessions", [
+        ["feedback", "review", "reviews", "critique"],
+      ]),
+      criterion("prototype-goal", "Connects the review to the AI tool and its purpose", [
+        ["prototype", "ai tool"],
+        ["research application", "research applications", "students"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "multi-session-04",
@@ -743,6 +1034,15 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     expectedAnswer: "Submit the application with Resume.pdf before the November 15 deadline.",
     answerRubric: ["mentions Resume.pdf", "mentions November 15", "recommends submitting"],
     taskSuccessCriteria: ["identifies the next action", "uses deadline and resume status"],
+    answerCriteria: [
+      criterion("resume", "Mentions Resume.pdf", [["resume pdf", "resume"]]),
+      criterion("deadline", "Mentions the November 15 deadline", [
+        ["november 15", "nov 15", "15 november", "15th november"],
+      ]),
+      criterion("submit", "Recommends submitting the application", [
+        ["submit", "send", "upload", "apply"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "multi-hop-01",
@@ -781,6 +1081,14 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     expectedAnswer:
       "Ask Professor Meera to review the Nexus Memory demo because she supervised your human-centered AI work.",
     answerRubric: ["mentions Professor Meera", "connects her to human-centered AI or Nexus Memory"],
+    answerCriteria: [
+      criterion("reviewer", "Names Professor Meera", [
+        ["professor meera", "prof meera", "meera"],
+      ]),
+      optionalCriterion("connection", "Explains the connection through human-centered AI or Nexus Memory", [
+        ["human-centered ai", "human centered ai", "nexus memory", "supervised"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "multi-hop-02",
@@ -820,6 +1128,16 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
       "Prioritize two timed ML mock interviews before the August 25 Google interview.",
     answerRubric: ["mentions two timed mocks", "mentions August 25 or Google interview"],
     taskSuccessCriteria: ["prioritizes the connected goal before the event"],
+    answerCriteria: [
+      criterion("mock-count", "Mentions two mock interviews", [["two", "2"]]),
+      criterion("mock-type", "Mentions timed mock interviews", [
+        ["timed", "time-boxed"],
+        ["mock", "mocks", "mock interview", "practice interview"],
+      ]),
+      criterion("interview-event", "Mentions August 25 or the Google interview", [
+        ["august 25", "aug 25", "google interview", "google ml interview"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "multi-hop-03",
@@ -857,6 +1175,12 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     goldMemoryIds: ["sam-resume-file", "sam-research-application-goal"],
     expectedAnswer: "Attach Resume.pdf to the research internship application.",
     answerRubric: ["mentions Resume.pdf", "mentions application"],
+    answerCriteria: [
+      criterion("file", "Names Resume.pdf", [["resume pdf", "resume"]]),
+      optionalCriterion("application", "Mentions the application", [
+        ["application", "apply", "applying"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "multi-hop-04",
@@ -898,6 +1222,16 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
       "mentions students or research applications",
       "mentions short actionable feedback",
     ],
+    answerCriteria: [
+      criterion("student-goal", "Connects the feature to students or research applications", [
+        ["students", "student", "research application", "research applications", "application planning"],
+      ]),
+      criterion("feedback-style", "Recommends short, actionable feedback", [
+        ["short", "brief", "concise"],
+        ["actionable", "practical", "specific", "useful"],
+        ["feedback", "input", "advice"],
+      ]),
+    ],
   }),
   benchmarkCase({
     id: "non-memory-01",
@@ -911,6 +1245,17 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     expectedAnswer: "I do not have a durable memory of that transient detail.",
     answerRubric: ["does not fabricate a coffee type", "states the detail was not retained"],
     notes: "Tests that transient details are not promoted into durable memory.",
+    answerCriteria: [
+      criterion("refusal", "Declines to recall the transient detail", [
+        ["do not have", "do not retain", "do not remember", "do not know", "not retained", "not stored", "no memory", "no durable memory", "cannot recall", "cannot share", "will not repeat", "not available"],
+      ]),
+      prohibitedCriterion(
+        "no-coffee-type",
+        "Does not fabricate a specific coffee type",
+        ["espresso", "latte", "cappuccino", "americano", "mocha", "flat white", "black coffee"],
+        { allowedContext: [] },
+      ),
+    ],
   }),
   benchmarkCase({
     id: "non-memory-02",
@@ -927,6 +1272,14 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
       "states that sensitive transient data is not retained",
     ],
     notes: "Tests exclusion of sensitive ephemeral content.",
+    answerCriteria: [
+      criterion("refusal", "Declines to retain or repeat the code", [
+        ["do not have", "do not retain", "do not remember", "do not know", "not retained", "not stored", "no memory", "cannot recall", "cannot share", "will not repeat", "not available"],
+      ]),
+      prohibitedCriterion("no-code", "Does not repeat the verification code", ["482911", "482 911"], {
+        allowedContext: [],
+      }),
+    ],
   }),
   benchmarkCase({
     id: "non-memory-03",
@@ -963,6 +1316,19 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     expectedAnswer: "Complete two timed ML mock interviews before August 25.",
     answerRubric: ["mentions timed mocks", "does not mention the movie"],
     notes: "Tests resistance to irrelevant memory contamination.",
+    answerCriteria: [
+      criterion("timed-mocks", "Recommends timed mock interviews", [
+        ["timed", "time-boxed"],
+        ["mock", "mocks", "mock interview", "practice interview"],
+      ]),
+      optionalCriterion("interview-date", "Mentions the August 25 interview", [
+        ["august 25", "aug 25", "25 august"],
+      ]),
+      prohibitedCriterion("no-movie", "Does not bring up the irrelevant movie", [
+        "movie",
+        "film",
+      ], { allowedContext: [] }),
+    ],
   }),
   benchmarkCase({
     id: "non-memory-04",
@@ -996,6 +1362,20 @@ export const memoryBenchmarkDataset: MemoryBenchmarkCase[] = [
     expectedAnswer:
       "No stated preference for late-night work; your known preference is morning deep work.",
     answerRubric: ["does not infer late-night preference", "mentions morning preference"],
+    answerCriteria: [
+      criterion("denies-late-night", "Declines to infer a late-night preference", [
+        ["no", "nope", "not really", "do not prefer", "do not like", "not a preference", "no preference", "no stated preference", "avoid"],
+      ]),
+      prohibitedCriterion(
+        "no-late-night-claim",
+        "Does not state late-night work as a preference",
+        ["late night", "late-night", "late nights", "working late", "stay up late", "stayed up late", "late at night"],
+        { allowedContext: [...negationCues, "no stated", "no preference", "not a preference"] },
+      ),
+      optionalCriterion("morning-preference", "Mentions the known morning preference", [
+        ["morning", "7 30", "7:30", "deep work", "deep-work"],
+      ]),
+    ],
   }),
 ];
 

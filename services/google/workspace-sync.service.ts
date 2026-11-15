@@ -85,7 +85,11 @@ export class GoogleWorkspaceSyncService {
         source: liveSource,
         connected: true,
         accountEmail: authStatus.accountEmail,
-        lastSyncedAt: pickLastSyncedAt(emailsResult.data.items, calendarResult.data.items, driveResult.data.items),
+        lastSyncedAt: pickLastSyncedAt(
+          emailsResult.data.items.map((item) => ({ timestamp: item.receivedAt })),
+          calendarResult.data.items.map((item) => ({ startTime: item.startTime })),
+          driveResult.data.items.map((item) => ({ modifiedTime: item.modifiedTime })),
+        ),
         emails: normalizeEmailItems(
           emailsResult.data.items.map((item) => ({
             id: item.id,

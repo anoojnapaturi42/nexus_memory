@@ -21,7 +21,7 @@ function buildError(message: string, details?: Record<string, unknown>): ApiErro
 
 export function getGeminiEnv(): GeminiEnvResult {
   const apiKey = process.env.GEMINI_API_KEY?.trim() ?? "";
-  const model = process.env.GEMINI_MODEL?.trim() || "gemini-2.0-flash";
+  const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash-lite";
   const embeddingModel = process.env.GEMINI_EMBEDDING_MODEL?.trim() || "text-embedding-004";
 
   if (!apiKey) {

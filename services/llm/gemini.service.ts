@@ -1,6 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { GeminiEnvConfig } from "./env";
-import type { LLMGenerateRequest, LLMGenerationResult, LLMProvider, LLMStreamChunk, LLMUsage } from "./provider";
+import type {
+  LLMGenerateRequest,
+  LLMGenerationResult,
+  LLMProvider,
+  LLMStreamChunk,
+  LLMUsage,
+} from "./provider";
 
 function structuredLog(event: string, data: Record<string, unknown>) {
   console.info(
@@ -20,13 +26,25 @@ function serializeContext(context?: Record<string, unknown>) {
 }
 
 function buildPrompt(request: LLMGenerateRequest) {
-  const parts = [request.systemPrompt?.trim(), request.prompt.trim(), serializeContext(request.context)].filter(Boolean);
+  const parts = [
+    request.systemPrompt?.trim(),
+    request.prompt.trim(),
+    serializeContext(request.context),
+  ].filter(Boolean);
   return parts.join("\n\n");
 }
 
 function toUsage(raw: any, fallbackText: string): LLMUsage {
-  const inputTokens = Number(raw?.promptTokenCount ?? raw?.inputTokenCount ?? Math.max(1, Math.ceil(fallbackText.length / 4)));
-  const outputTokens = Number(raw?.candidatesTokenCount ?? raw?.outputTokenCount ?? Math.max(1, Math.ceil(fallbackText.length / 4)));
+  const inputTokens = Number(
+    raw?.promptTokenCount ??
+      raw?.inputTokenCount ??
+      Math.max(1, Math.ceil(fallbackText.length / 4)),
+  );
+  const outputTokens = Number(
+    raw?.candidatesTokenCount ??
+      raw?.outputTokenCount ??
+      Math.max(1, Math.ceil(fallbackText.length / 4)),
+  );
   const totalTokens = Number(raw?.totalTokenCount ?? inputTokens + outputTokens);
 
   return {
@@ -43,6 +61,26 @@ function getTextFromResponse(response: any) {
     return String(response.candidates[0].content.parts[0].text);
   }
   return "";
+}
+
+async function withTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  operationName: string,
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error(`${operationName} timed out after ${timeoutMs}ms`)),
+      timeoutMs,
+    );
+  });
+
+  try {
+    return await Promise.race([operation, timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 export class GeminiLLMService implements LLMProvider {
@@ -82,7 +120,11 @@ export class GeminiLLMService implements LLMProvider {
       model: request.model ?? this.config.model,
     });
 
-    const response: any = await model.generateContent(prompt);
+    const response: any = await withTimeout(
+      model.generateContent(prompt),
+      45_000,
+      "gemini generateContent",
+    );
     const text = getTextFromResponse(response);
     const usage = toUsage(response?.response?.usageMetadata ?? response?.usageMetadata, text);
 
@@ -103,7 +145,9 @@ export class GeminiLLMService implements LLMProvider {
     };
   }
 
-  async *stream(request: LLMGenerateRequest): AsyncGenerator<LLMStreamChunk, LLMGenerationResult, void> {
+  async *stream(
+    request: LLMGenerateRequest,
+  ): AsyncGenerator<LLMStreamChunk, LLMGenerationResult, void> {
     const startedAt = Date.now();
     const model = this.getTextModel(request.model);
     const prompt = buildPrompt(request);
@@ -113,7 +157,11 @@ export class GeminiLLMService implements LLMProvider {
       model: request.model ?? this.config.model,
     });
 
-    const streamResult: any = await model.generateContentStream(prompt);
+    const streamResult: any = await withTimeout(
+      model.generateContentStream(prompt),
+      45_000,
+      "gemini generateContentStream",
+    );
     let fullText = "";
 
     for await (const chunk of streamResult.stream ?? []) {
@@ -144,7 +192,16 @@ export class GeminiLLMService implements LLMProvider {
     };
   }
 
-  async embeddings(texts: string[], options?: { model?: string }): Promise<{ provider: string; model: string; embeddings: number[][]; usage?: LLMUsage; raw?: unknown }> {
+  async embeddings(
+    texts: string[],
+    options?: { model?: string },
+  ): Promise<{
+    provider: string;
+    model: string;
+    embeddings: number[][];
+    usage?: LLMUsage;
+    raw?: unknown;
+  }> {
     const modelName = options?.model ?? this.config.embeddingModel;
     const model = this.getEmbeddingModel(modelName);
     const startedAt = Date.now();

@@ -6,4 +6,5 @@ export const queryKeys = {
   googleWorkspaceSync: ["google-workspace-sync"] as const,
   dashboard: ["dashboard"] as const,
   proactive: ["proactive"] as const,
+  research: ["research"] as const,
 } as const;

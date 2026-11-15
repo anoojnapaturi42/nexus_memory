@@ -54,6 +54,7 @@ export {
   exportMemoryEvaluationArtifact,
   GeminiMemoryAnswerGenerator,
   MemoryEvaluationRunner,
+  OllamaMemoryAnswerGenerator,
   RuleBasedMemoryAnswerEvaluator,
 } from "./evaluation";
 export type {

@@ -407,7 +407,8 @@ export class GoogleAuthService {
     if (!accountEmail) {
       try {
         const userinfo = google.oauth2({ version: "v2", auth: oauthClient });
-        const response = await userinfo.userinfo.get({ access_token: accessToken });
+        oauthClient.setCredentials({ access_token: accessToken });
+        const response = await userinfo.userinfo.get();
         accountEmail = response.data.email ?? null;
       } catch {
         accountEmail = null;
